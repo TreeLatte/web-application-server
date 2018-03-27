@@ -15,6 +15,7 @@ import webserver.RequestHandler;
 public class HttpRequestUtils {
 	
 	private static final Logger log = LoggerFactory.getLogger(HttpRequestUtils.class);
+	
 	public static String getUrl(String firstLine){
 		String[] splited = firstLine.split(" ");
     	String path = splited[1];
