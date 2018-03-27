@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -37,28 +38,38 @@ public class RequestHandler extends Thread {
         	BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
         	String line = br.readLine();
         	if(line == null){return;};
-        	int length=0;
+        	String path = HttpRequestUtils.getUrl(line);
+        	Map<String,String> headers = new HashMap<String,String>();
         	while(!"".equals(line)){
         		log.debug("header : {}",line);
         		line = br.readLine();
-        		length+=line.getBytes("UTF-8").length;
+        		String[] headerTokens = line.split(": ");
+        		if(headerTokens.length == 2) {
+        			headers.put(headerTokens[0], headerTokens[1]);
+        		}
         	}
-        	IOUtils.readData(br, length);
         	
-
+        	log.debug("Content-Length : {}",headers.get("Content-Length"));
+//        	while(!"".equals(line)){
+//        		log.debug("header : {}",line);
+//        		line = br.readLine();
+//        	}
         	//get 방식
-        	String path = HttpRequestUtils.getUrl(line);
+        	
 //        	log.debug(path);
-//        	if(path.startsWith("/user/create")) {
+        	if(path.startsWith("/user/create")) {
+        		String requestBody = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
+        		log.debug("request body : {}",requestBody);
 //        		int index = path.indexOf("?");
 //        		String requestPath = path.substring(0,index);
 //        		String queryString = path.substring(index+1);
 //        		Map<String, String> params = HttpRequestUtils.parseQueryString(queryString);
-//        		User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
-//        		log.debug("User : {}",user);
-//        		
-//        		path = "/index.html";
-//        	}
+        		Map<String, String> params = HttpRequestUtils.parseQueryString(requestBody);
+        		User user = new User(params.get("userId"), params.get("password"), params.get("name"), params.get("email"));
+        		log.debug("User : {}",user);
+        		
+        		path = "/index.html";
+        	}
         	
         	
             DataOutputStream dos = new DataOutputStream(out);
