@@ -22,6 +22,7 @@ public class HttpRequest {
 	private Map<String, String> params = new HashMap<String,String>();
 	private String path;
 	private String method;
+	
 	public HttpRequest(InputStream in){
 		try {
 			BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"));
@@ -36,17 +37,19 @@ public class HttpRequest {
 		        while(!line.equals("")) {
 		        	log.debug("headers : {}",line);
 		        	String[] tokens = line.split(":");
+		        	//java trim (공백 제거용.)
 		        	headers.put(tokens[0].trim(),tokens[1].trim());
-		        	
+		        	line = br.readLine(); 
+		        }
+		        if("POST".equals(method)) {
+		        	String body = IOUtils.readData(br, Integer.parseInt(headers.get("Content-Length")));
+		        	params = HttpRequestUtils.parseQueryString(body);
 		        }
 		       
 		} catch (IOException e) {
 			log.error(e.getMessage());
 		}
-       
-
 	}
-
 	
 	private void processRequestLine(String line) {
 		// TODO Auto-generated method stub
@@ -54,6 +57,20 @@ public class HttpRequest {
 		String[] tokens=line.split(" ");
 		method = tokens[0];
 		
+		if("POST".equals(method)) {
+			path = tokens[1];
+			return;
+		}
+		int index = tokens[1].indexOf("?");
+		if(index == -1) {
+			//get이고 요청에 파라미터가 없는(사실상 index라든지 그런거)
+			path = tokens[1];
+			return;
+		}else {
+			//(get이면서 파라미터 있는거.)
+			path = tokens[1].substring(0, index);
+			params = HttpRequestUtils.parseQueryString(tokens[1].substring(index+1));
+		}
 	}
 
 
@@ -62,18 +79,8 @@ public class HttpRequest {
 	}
 
 
-	public void setPath(String path) {
-		this.path = path;
-	}
-
-
 	public String getMethod() {
 		return method;
-	}
-
-
-	public void setMethod(String method) {
-		this.method = method;
 	}
 
 	public String getParameter(String parameterName) {
